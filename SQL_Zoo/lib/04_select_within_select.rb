@@ -99,7 +99,7 @@ def sparse_continents
   execute(<<-SQL)
   SELECT name, continent, population
   FROM countries
-    WHERE continent IN (
+  WHERE continent IN (
     SELECT continent
     FROM countries
     GROUP BY continent
