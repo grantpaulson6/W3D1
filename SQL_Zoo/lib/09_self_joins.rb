@@ -217,12 +217,13 @@ def craiglockhart_to_sighthill
   # Sighthill. Show the bus no. and company for the first bus, the name of the
   # stop for the transfer, and the bus no. and company for the second bus.
   execute(<<-SQL)
+  SELECT DISTINCT Start.Start_num, Start.Start_comp, Start.Start_Possible_destinations, Stop.Stop_num, Stop.Stop_comp
+  FROM
+  (
     SELECT
-      a.num,
-      a.company,
-      stopb.name AS Possible_destinations,
-      b.num,
-      b.company
+      a.num as Start_num,
+      a.company as Start_comp,
+      stopb.name AS Start_Possible_destinations
     FROM
       routes a
     JOIN
@@ -244,5 +245,35 @@ def craiglockhart_to_sighthill
       JOIN
         stops stopb ON (b.stop_id = stopb.id)
       WHERE stopa.name = 'Sighthill' AND stopa.name != stopb.name)
+  ) as Start
+  JOIN
+(
+  SELECT
+  a.num as Stop_num,
+  a.company as Stop_comp,
+  stopb.name AS Stop_Possible_destinations
+    FROM
+      routes a
+    JOIN
+      routes b ON (a.company = b.company AND a.num = b.num)
+    JOIN
+      stops stopa ON (a.stop_id = stopa.id)
+    JOIN
+      stops stopb ON (b.stop_id = stopb.id)
+    WHERE stopa.name != stopb.name AND stopa.name = 'Sighthill' AND 
+      stopb.name IN (
+      SELECT
+        stopb.name
+      FROM
+        routes a
+      JOIN
+        routes b ON (a.company = b.company AND a.num = b.num)
+      JOIN
+        stops stopa ON (a.stop_id = stopa.id)
+      JOIN
+        stops stopb ON (b.stop_id = stopb.id)
+      WHERE stopa.name = 'Craiglockhart' AND stopa.name != stopb.name)
+      ) as Stop
+      ON Start.Start_Possible_destinations = Stop.Stop_Possible_destinations
   SQL
 end
